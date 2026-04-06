@@ -1,0 +1,8 @@
+Revision history for DBIO-PostgreSQL-Age
+
+{{$NEXT}}
+    - Initial release: Apache AGE graph database support for DBIO::PostgreSQL
+    - DBIO::PostgreSQL::Age schema component (load_components('PostgreSQL::Age'))
+    - DBIO::PostgreSQL::Age::Storage with connect_call_load_age, create_graph,
+      drop_graph, and cypher()
+
