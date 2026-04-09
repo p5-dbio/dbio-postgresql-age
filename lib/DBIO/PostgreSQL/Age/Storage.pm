@@ -92,19 +92,25 @@ vertices and edges within the graph.
 sub cypher {
   my ($self, $graph, $query, $columns, $params) = @_;
 
+  # Apache AGE requires the graph name to be a string literal in the
+  # cypher() call -- it cannot be passed as a bind parameter. Validate the
+  # name as a plain identifier so we can safely inline it.
+  $graph =~ /\A[A-Za-z_][A-Za-z0-9_]*\z/
+    or $self->throw_exception("Invalid AGE graph name '$graph'");
+
   my $col_spec = join ', ', map { "$_ agtype" } @$columns;
 
-  my @bind = ($graph);
+  my @bind;
   my $sql;
 
   if ($params && %$params) {
     require JSON::MaybeXS;
     my $json = JSON::MaybeXS->new(utf8 => 1, canonical => 1)->encode($params);
     push @bind, $json;
-    $sql = "SELECT * FROM cypher(?, \$\$\n$query\n\$\$, ?) AS ($col_spec)";
+    $sql = "SELECT * FROM cypher('$graph', \$\$\n$query\n\$\$, ?) AS ($col_spec)";
   }
   else {
-    $sql = "SELECT * FROM cypher(?, \$\$\n$query\n\$\$) AS ($col_spec)";
+    $sql = "SELECT * FROM cypher('$graph', \$\$\n$query\n\$\$) AS ($col_spec)";
   }
 
   return $self->dbh->selectall_arrayref($sql, { Slice => {} }, @bind);

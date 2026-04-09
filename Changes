@@ -5,4 +5,13 @@ Revision history for DBIO-PostgreSQL-Age
     - DBIO::PostgreSQL::Age schema component (load_components('PostgreSQL::Age'))
     - DBIO::PostgreSQL::Age::Storage with connect_call_load_age, create_graph,
       drop_graph, and cypher()
+    - Fix cypher() to inline the graph name as a SQL literal instead of
+      binding it as a parameter -- Apache AGE requires the first argument
+      to cypher() to be a name constant, not a placeholder
+    - Add t/10-age-live.t with 16 assertions covering create_graph,
+      drop_graph (cascade), cypher CREATE/MATCH with vertices and edges,
+      and parameterized cypher queries against a pgvector+AGE-enabled
+      PostgreSQL pod
+    - Remove workspace .proverc (tests run against installed dbio core
+      via dzil install)
 
