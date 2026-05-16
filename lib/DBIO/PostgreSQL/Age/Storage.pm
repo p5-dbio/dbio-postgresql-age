@@ -7,6 +7,10 @@ use warnings;
 
 use base 'DBIO::PostgreSQL::Storage';
 
+__PACKAGE__->register_driver('Pg' => __PACKAGE__);
+
+sub sqlt_type { 'PostgreSQL' }
+
 =head1 SYNOPSIS
 
   # Loaded automatically via DBIO::PostgreSQL::Age component.

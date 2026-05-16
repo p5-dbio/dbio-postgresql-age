@@ -2,7 +2,7 @@
 
 ## Perl Rules
 
-**MANDATORY: load the `perl-core` skill before editing any Perl code.** It encodes DBIO project conventions.
+**MANDATORY: load the `dbio-perl-core` skill before editing any Perl code.** DBIO project conventions.
 
 - **`use Module;`** to load modules. `require` only when you absolutely know why (runtime plugin loading).
 - **`->instance`** for singleton classes. `->new` for everything else.
