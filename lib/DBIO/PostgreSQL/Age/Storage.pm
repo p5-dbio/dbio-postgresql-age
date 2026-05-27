@@ -1,6 +1,5 @@
 package DBIO::PostgreSQL::Age::Storage;
 # ABSTRACT: PostgreSQL storage with Apache AGE graph support
-our $VERSION = '0.900000';
 
 use strict;
 use warnings;

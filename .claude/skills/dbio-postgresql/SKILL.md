@@ -8,7 +8,7 @@ model: sonnet
 
 # DBIO::PostgreSQL
 
-Covers PostgreSQL hierarchy: cluster → database → schema (namespace) → table/type/function/index/trigger/policy.
+Hierarchy: cluster → database → schema (namespace) → table/type/function/index/trigger/policy.
 
 ## Component Loading
 
@@ -16,18 +16,18 @@ Covers PostgreSQL hierarchy: cluster → database → schema (namespace) → tab
 package MyApp::DB;
 use base 'DBIO::Schema';
 __PACKAGE__->load_components('PostgreSQL');
-# → sets storage_type to +DBIO::PostgreSQL::Storage automatically
+# → sets storage_type to +DBIO::PostgreSQL::Storage
 ```
 
-## Three-Layer Architecture
+## Three Layers
 
 | Layer | Class | Purpose |
 |-------|-------|---------|
-| Database | `DBIO::PostgreSQL` (Schema component) | extensions, search_path, settings |
+| Database | `DBIO::PostgreSQL` (Schema comp) | extensions, search_path, settings |
 | Namespace | `DBIO::PostgreSQL::PgSchema` subclass | enums, composite types, functions |
-| Table | `DBIO::PostgreSQL::Result` (Result component) | indexes, triggers, RLS, pg_schema |
+| Table | `DBIO::PostgreSQL::Result` (Result comp) | indexes, triggers, RLS, pg_schema |
 
-### Database layer
+### Database
 
 ```perl
 __PACKAGE__->pg_schemas(qw( public auth api ));
@@ -36,7 +36,7 @@ __PACKAGE__->pg_search_path(qw( public ));
 __PACKAGE__->pg_settings({ 'default_text_search_config' => 'pg_catalog.german' });
 ```
 
-### PgSchema layer
+### PgSchema
 
 ```perl
 package MyApp::DB::PgSchema::Auth;
@@ -46,7 +46,7 @@ __PACKAGE__->pg_enum('role_type' => [qw( admin moderator user guest )]);
 __PACKAGE__->pg_type('address_type' => { street => 'text', city => 'text', zip => 'varchar(10)' });
 ```
 
-### Result layer
+### Result
 
 ```perl
 package MyApp::DB::Result::User;
@@ -68,7 +68,7 @@ __PACKAGE__->pg_index('idx_users_active' => { columns => ['role'], where => "rol
 
 ## JSONB Querying
 
-Operators work in any `search()` automatically via `DBIO::PostgreSQL::SQLMaker` `special_ops`.
+Operators auto-applied via `DBIO::PostgreSQL::SQLMaker` `special_ops`.
 
 ### Containment `@>` / `<@`
 
@@ -81,7 +81,7 @@ $rs->search({ 'me.data' => { '@>' => { status => 'active' } } });
 $rs->search({ 'me.tags' => { '@>' => ['admin', 'user'] } });
 $rs->search({ 'me.data' => { '<@' => { role => 'guest' } } });
 
-# Pre-encoded JSON string — passed through as-is
+# Pre-encoded JSON string — passed through
 $rs->search({ 'me.data' => { '@>' => '{"status":"active"}' } });
 
 # Scalar ref — literal SQL, no binding
@@ -90,7 +90,7 @@ $rs->search({ 'me.data' => { '@>' => \'other_col' } });
 
 ### Key existence `?` / `?|` / `?&`
 
-Rewritten as `jsonb_exists*()` (avoids DBI `?` placeholder conflict):
+Rewritten as `jsonb_exists*()` to avoid DBI `?` placeholder conflict:
 
 ```perl
 $rs->search({ 'me.data' => { '?'  => 'email' } });
@@ -101,11 +101,10 @@ $rs->search({ 'me.data' => { '?&' => [qw(name email)] } });
 # WHERE jsonb_exists_all("me"."data", ARRAY[?, ?])
 ```
 
-### JSONPath `@?` / `@@` (PostgreSQL 12+)
+### JSONPath `@?` / `@@` (PG 12+)
 
 ```perl
 $rs->search({ 'me.data' => { '@?' => '$.status == "active"' } });
-# WHERE "me"."data" @? '$.status == "active"'::jsonpath
 $rs->search({ 'me.data' => { '@@' => '$.score > 10' } });
 ```
 
@@ -114,14 +113,13 @@ $rs->search({ 'me.data' => { '@@' => '$.score > 10' } });
 ```perl
 use DBIO::PostgreSQL::JSONB qw(jsonb);
 
-# Single key uses ->>, nested path uses #>>
-jsonb('me.data', 'status')->eq('active');           # (me.data->>'status') = ?
-jsonb('me.config', 'theme', 'color')->eq('dark');   # (me.config#>>'{theme,color}') = ?
+# Single key → ->>, nested path → #>>
+jsonb('me.data', 'status')->eq('active');         # (me.data->>'status') = ?
+jsonb('me.config', 'theme', 'color')->eq('dark'); # (me.config#>>'{theme,color}') = ?
 
-# Comparison: eq, ne, gt, ge, lt, le, like, ilike, is_null, is_not_null
+# Comparisons: eq, ne, gt, ge, lt, le, like, ilike, is_null, is_not_null
 jsonb('me.stats', 'score')->gt(100);
 jsonb('me.data', 'name')->ilike('%smith%');
-jsonb('me.data', 'email')->is_not_null;
 
 # ORDER BY
 $rs->search({}, { order_by => jsonb('me.score', 'total')->as_order });
@@ -146,7 +144,7 @@ $deploy->install;                       # fresh install
 # Diff: temp DB deploy + pg_catalog compare
 my $diff = $deploy->diff;
 say $diff->as_sql;       # ALTER statements
-say $diff->summary;      # human-readable changes
+say $diff->summary;      # human-readable
 $deploy->apply($diff);
 
 $deploy->upgrade;        # one-step
@@ -158,10 +156,10 @@ All via `pg_catalog`:
 
 ```perl
 my $introspect = DBIO::PostgreSQL::Introspect->new(schema => $schema);
-$introspect->schemas;     # list of DBIO::PostgreSQL::Introspect::Schema
+$introspect->schemas;     # → DBIO::PostgreSQL::Introspect::Schema objs
 $introspect->tables;      # columns, constraints
 $introspect->types;       # enums, composites, ranges
-$introspect->indexes;     # btree/gin/gist/brin/ivfflat with full def
+$introspect->indexes;     # btree/gin/gist/brin/ivfflat + full def
 $introspect->triggers;
 $introspect->functions;
 $introspect->extensions;
@@ -171,7 +169,7 @@ $introspect->sequences;
 
 ## Testing
 
-Live integration:
+Live integration (needs **pgvector**):
 
 ```bash
 export DBIO_TEST_PG_DSN='dbi:Pg:dbname=dbio_test;host=localhost'
@@ -180,9 +178,7 @@ export DBIO_TEST_PG_PASS='secret'
 prove -l t/
 ```
 
-PostgreSQL must have **pgvector** installed.
-
-Offline (SQL generation via fake storage):
+Offline (fake storage):
 
 ```perl
 my $schema = DBIO::Test->init_schema(
@@ -195,14 +191,14 @@ my $schema = DBIO::Test->init_schema(
 
 | Module | Purpose |
 |--------|---------|
-| `DBIO::PostgreSQL` | Schema component (database layer) |
+| `DBIO::PostgreSQL` | Schema component (DB layer) |
 | `DBIO::PostgreSQL::Storage` | DBI storage: RETURNING, savepoints, BYTEA, JSONB inflate |
 | `DBIO::PostgreSQL::SQLMaker` | JSONB operators, `special_ops` |
 | `DBIO::PostgreSQL::JSONB` | `jsonb()` path-expression DSL |
-| `DBIO::PostgreSQL::Result` | Result component: indexes, triggers, RLS, pg_schema |
+| `DBIO::PostgreSQL::Result` | Result comp: indexes, triggers, RLS, pg_schema |
 | `DBIO::PostgreSQL::PgSchema` | Base for PG namespace classes |
 | `DBIO::PostgreSQL::DDL` | Generates CREATE statements |
 | `DBIO::PostgreSQL::Deploy` | Orchestrates install/diff/upgrade |
-| `DBIO::PostgreSQL::Diff` | Compares two introspected models |
+| `DBIO::PostgreSQL::Diff` | Compares introspected models |
 | `DBIO::PostgreSQL::Introspect` | Reads live DB via pg_catalog |
-| `DBIO::PostgreSQL::Loader` | Reverse-engineer live DB into DBIO classes |
+| `DBIO::PostgreSQL::Loader` | Reverse-engineer DB → DBIO classes |

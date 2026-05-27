@@ -1,5 +1,5 @@
 ---
-name: postgresql-database-perl
+name: dbio-postgresql-database
 description: "PostgreSQL database knowledge for Perl driver development (DBD::Pg, pg_catalog, PG-specific types and features)"
 user-invocable: false
 allowed-tools: Read, Grep, Glob
